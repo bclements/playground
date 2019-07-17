@@ -18,6 +18,7 @@ def validate_target(target):
     validHostnameRegex = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
     if re.match(validIpAddressRegex, target):
         return {'type': 'ip-address', 'param': 'ip'}
+    elif re.match(validHostnameRegex, target):
         return {'type': 'domain', 'param': 'domain'}
     else:
         print("Invalid Domain name or Ip address")
@@ -33,15 +34,15 @@ def get_target_data(target, target_type):
 
         returns json data retrieved from virustotal url
     '''
-    vt_url = 'https://www.virustotal.com/vtapi/v2/{0}/report?apikey={1}&{2}={3}'.format(target_type['type'], vt_apikey, target_type['param'] , target)
+    vt_url = 'https://www.virustotal.com/vtapi/v2/{0}/report?apikey={1}&{2}={3}'.format(target_type['type'], vt_apikey, target_type['param'], target)
 
     try:
         req = requests.get(url=vt_url)
     except requests.exceptions.RequestException as e:
-        print e
+        print(e)
         sys.exit(1)
 
-    data =  req.json()
+    data = req.json()
     return data
 
 
@@ -50,22 +51,23 @@ def main():
     VirusTotal Simple Report Client
     '''
     parser = argparse.ArgumentParser(
-        description='Retrieve Virtual Total Report')
+        description='Retrieve Virtual Total Reports by Domain/hostname or IP Address')
     parser.add_argument('target', metavar='TARGET', type=str, nargs='?',
                         help='The domain or ip address you would like to retrieve a report on')
 
     args = vars(parser.parse_args())
     if not args['target']:
-        print("Missing target to report on")
+        print("Missing Domain or IP Address to report on")
         return sys.exit(2)
 
     target = args['target']
     target_type = validate_target(target)
 
-    data=get_target_data(target, target_type)
+    data = get_target_data(target, target_type)
 
     # Print out one of the json datasets as an example.
     print(pandabear.DataFrame(data['detected_urls']))
+
 
 if __name__ == '__main__':
     main()
