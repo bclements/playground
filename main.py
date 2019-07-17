@@ -8,17 +8,22 @@ from ratelimit import limits, RateLimitException
 from backoff import on_exception, expo
 
 vt_apikey = os.environ.get('VT_APIKEY')
-
 if vt_apikey is None:
-    print("Please set the environment variable VT_APIKEY, i.e. export VT_APIKEY=myapikey")
+    print("Please set the environment variable VT_APIKEY, \
+        i.e. export VT_APIKEY=myapikey")
     sys.exit(2)
-    
+
 
 def validate_target(target):
     '''
-    validate_target: Function to check if the supplied target is either a valid hostname or ip address
+    validate_target: Function to check if the supplied target is
+                                    either a valid hostname or ip address
     vars:
-        target: The text s
+        target: The text string that should contain a valid ip
+                       address or domain name.
+
+    returns a dictionary containing the target_type
+    (domain or ip-address) and the correct paramater to build the url
     '''
     validIpAddressRegex = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
     validHostnameRegex = "^(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])$"
@@ -34,6 +39,14 @@ def validate_target(target):
 @on_exception(expo, RateLimitException, max_tries=8)
 @limits(calls=4, period=60)
 def get_url_data(url):
+    '''
+    get_url_data: Function to retrieve ip or domain url reports
+    vars:
+        url: A detected url to return data for
+
+    returns a json dictionary containing url scan report data
+
+    '''
     vt_url = 'https://www.virustotal.com/vtapi/v2/url/report?apikey={0}&resource={1}'.format(vt_apikey, url)
     try:
         req = requests.get(url=vt_url)
@@ -42,6 +55,7 @@ def get_url_data(url):
 
     data = req.json()
     return data
+
 
 @on_exception(expo, RateLimitException, max_tries=8)
 @limits(calls=4, period=60)
@@ -54,7 +68,11 @@ def get_target_data(target, target_type):
 
         returns json data retrieved from virustotal url
     '''
-    vt_url = 'https://www.virustotal.com/vtapi/v2/{0}/report?apikey={1}&{2}={3}'.format(target_type['type'], vt_apikey, target_type['param'], target)
+    vt_url = 'https://www.virustotal.com/vtapi/v2/{0}/report?apikey={1}&{2}={3}'.format(
+        target_type['type'],
+        vt_apikey,
+        target_type['param'], target
+        )
     try:
         req = requests.get(url=vt_url)
     except requests.exceptions.RequestException as e:
@@ -96,7 +114,7 @@ def main():
     urls_df.columns = ["urls"]
     print(urls_df)
 
-    # Iterate through each url and look them up. Test 3
+    # Iterate through each url and look them up then print. Test 3
     for url in urls:
         data = get_url_data(url)
         urldata_df = pandabear.DataFrame(data['scans'])
