@@ -1,7 +1,7 @@
 # Python Playground
 
 ## MacOS/Linux Deployment
-export VT_APIKEY=<apikey>
+export VT_APIKEY=\<apikey>
 
 git clone https://github.com/bclements/playground.git
 
